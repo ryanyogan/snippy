@@ -1,9 +1,9 @@
-# fly.toml app configuration file generated for nerdy-snippetbox on 2023-09-17T21:28:07-05:00
+# fly.toml app configuration file generated for proud-moon-3181 on 2023-09-23T22:10:47-05:00
 #
 # See https://fly.io/docs/reference/configuration/ for information about how to use this file.
 #
 
-app = "nerdy-snippetbox"
+app = "proud-moon-3181"
 primary_region = "atl"
 
 [build]
@@ -19,3 +19,4 @@ primary_region = "atl"
   auto_stop_machines = true
   auto_start_machines = true
   min_machines_running = 0
+  processes = ["app"]
