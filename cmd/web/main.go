@@ -24,7 +24,6 @@ func main() {
 		port = ":8080"
 	}
 
-	addr := flag.String("addr", ":4000", "HTTP Network Port")
 	dsn := flag.String("dsn", "ryan:hummer@/snippetbox?parseTime=true", "MySQL data source name")
 	flag.Parse()
 
@@ -49,8 +48,7 @@ func main() {
 		templateCache: templateCache,
 	}
 
-	logger.Info("Starting server", "addr", *addr)
-
+	logger.Info("Listening: http://localhost"+port, "addr", port)
 	err = http.ListenAndServe(port, app.routes())
 	logger.Error(err.Error())
 	os.Exit(1)
