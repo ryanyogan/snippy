@@ -3,6 +3,7 @@ package main
 import (
 	"database/sql"
 	"flag"
+	"fmt"
 	"html/template"
 	"log/slog"
 	"net/http"
@@ -18,13 +19,27 @@ type application struct {
 	templateCache map[string]*template.Template
 }
 
+const (
+	username = "doadmin"
+	password = "AVNS_F6Tom7HO4JzlkeRvDNn"
+	hostname = "snippetbox-do-user-6565302-0.b.db.ondigitalocean.com:25060"
+	dbname   = "snippetbox"
+)
+
+func dsn(dbName string) string {
+	return fmt.Sprintf("%s:%s@tcp(%s)/%s", username, password, hostname, dbName)
+
+}
+
 func main() {
 	port := os.Getenv("PORT")
 	if port == "" {
-		port = ":8080"
+		port = "8080"
 	}
 
-	dsn := flag.String("dsn", "ryan:hummer@/snippetbox?parseTime=true", "MySQL data source name")
+	// t := "ryan:hummer@/snippetbox?parseTime=true"
+	// s := "mysql://doadmin:AVNS_F6Tom7HO4JzlkeRvDNn@snippetbox-do-user-6565302-0.b.db.ondigitalocean.com:25060/snippetbox?ssl-mode=REQUIRED&?parseTime=true"
+	dsn := flag.String("dsn", dsn("snippetbox?parseTime=true"), "MySQL data source name")
 	flag.Parse()
 
 	logger := slog.New(slog.NewTextHandler(os.Stdout, nil))
@@ -49,7 +64,7 @@ func main() {
 	}
 
 	logger.Info("Listening: http://localhost"+port, "addr", port)
-	err = http.ListenAndServe(port, app.routes())
+	err = http.ListenAndServe(":"+port, app.routes())
 	logger.Error(err.Error())
 	os.Exit(1)
 }
