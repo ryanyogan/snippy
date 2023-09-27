@@ -8,15 +8,23 @@ import (
 	"log/slog"
 	"net/http"
 	"os"
+	"time"
 
+	"github.com/alexedwards/scs/mysqlstore"
+	"github.com/alexedwards/scs/v2"
+	"github.com/go-playground/form/v4"
 	_ "github.com/go-sql-driver/mysql"
 	"snippetbox.yogan.dev/internal/models"
+
+	_ "github.com/go-sql-driver/mysql"
 )
 
 type application struct {
-	logger        *slog.Logger
-	snippets      *models.SnippetModel
-	templateCache map[string]*template.Template
+	logger         *slog.Logger
+	snippets       *models.SnippetModel
+	templateCache  map[string]*template.Template
+	formDecoder    *form.Decoder
+	sessionManager *scs.SessionManager
 }
 
 const (
@@ -34,9 +42,10 @@ func dsn(dbName string) string {
 func main() {
 	port := os.Getenv("PORT")
 	if port == "" {
-		port = "8080"
+		port = ":8080"
 	}
 
+	// addr := flag.String("addr", ":8080", "HTTP Network Address")
 	// t := "ryan:hummer@/snippetbox?parseTime=true"
 	// s := "mysql://doadmin:AVNS_F6Tom7HO4JzlkeRvDNn@snippetbox-do-user-6565302-0.b.db.ondigitalocean.com:25060/snippetbox?ssl-mode=REQUIRED&?parseTime=true"
 	dsn := flag.String("dsn", dsn("snippetbox?parseTime=true"), "MySQL data source name")
@@ -57,14 +66,30 @@ func main() {
 		os.Exit(1)
 	}
 
+	formDecoder := form.NewDecoder()
+
+	sessionManager := scs.New()
+	sessionManager.Store = mysqlstore.New(db)
+	sessionManager.Lifetime = 12 * time.Hour
+	sessionManager.Cookie.Secure = true
+
 	app := &application{
-		logger:        logger,
-		snippets:      &models.SnippetModel{DB: db},
-		templateCache: templateCache,
+		logger:         logger,
+		snippets:       &models.SnippetModel{DB: db},
+		templateCache:  templateCache,
+		formDecoder:    formDecoder,
+		sessionManager: sessionManager,
+	}
+
+	srv := &http.Server{
+		Addr:     port,
+		Handler:  app.routes(),
+		ErrorLog: slog.NewLogLogger(logger.Handler(), slog.LevelError),
 	}
 
 	logger.Info("Listening: http://localhost"+port, "addr", port)
-	err = http.ListenAndServe(":"+port, app.routes())
+
+	err = srv.ListenAndServeTLS("./tls/cert.pem", "./tls/key.pem")
 	logger.Error(err.Error())
 	os.Exit(1)
 }
